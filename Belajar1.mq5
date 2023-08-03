@@ -4,7 +4,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2023, JCZeprazx Ltd."
 #property link      "https://www.mql5.com"
-#property version   "1.00"
+#property version   "1.02"
 
 //+------------------------------------------------------------------+
 //| Header Files                                                     |
@@ -88,6 +88,37 @@ bool IsNewBar(bool first_call = false)
    return (result);
   }
 
+//+------------------------------------------------------------------+
+//| Trade function                                                   |
+//+------------------------------------------------------------------+
+void OpenTrade(ENUM_ORDER_TYPE type)
+  {
+   double price;
+   double sl;
+   double tp;
+
+   if(type == ORDER_TYPE_BUY)
+     {
+      price = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+      sl = price - StopLoss;
+      tp = price + TakeProfit;
+     }
+   else
+     {
+      price = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+      sl = price + StopLoss;
+      tp = price - TakeProfit;
+     }
+
+   price = NormalizeDouble(price, Digits());
+   sl = NormalizeDouble(sl, Digits());
+   tp = NormalizeDouble(tp, Digits());
+
+   if(!Trade.PositionOpen(Symbol(), type, OrderLotSize, price, sl, tp, NULL))
+     {
+      Print("Error occurred");
+     }
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -139,6 +170,18 @@ void OnTick()
    if(CopyBuffer(SlowHandle, 0, 0, 3, SlowBuffer) < 3)
      {
       return;
+     }
+
+   if((FastBuffer[1] > SlowBuffer[1]) && !(FastBuffer[2] > SlowBuffer[2]))
+     {
+      OpenTrade(ORDER_TYPE_BUY);
+     }
+   else
+     {
+      if((FastBuffer[1] < SlowBuffer[1]) && !(FastBuffer[2] < SlowBuffer[2]))
+        {
+         OpenTrade(ORDER_TYPE_SELL);
+        }
      }
   }
 
